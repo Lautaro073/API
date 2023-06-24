@@ -13,13 +13,59 @@ const db = mysql.createPool({
     host: 'localhost',
     user: 'root',
     database: 'libreria'
-  });
+});
 
-  db.getConnection((err, connection) => {
+db.getConnection((err, connection) => {
     if(err) throw err;
     console.log("Conexión a la base de datos establecida");
-  });
-  //Mostrar Los libros
+});
+//OBTENER AUTOR
+app.get('/autores', (req, res) => {
+    db.query('SELECT * FROM Autores', (error, results) => {
+        if (error) throw error;
+        res.status(200).json(results);
+    });
+});
+//OBTENER AUTOR POR ID
+app.get('/autores/:id', (req, res) => {
+    db.query('SELECT * FROM Autores WHERE id = ?', [req.params.id], (error, results) => {
+        if (error) throw error;
+        if (results.length > 0) {
+            res.status(200).json(results[0]);
+        } else {
+            res.status(404).send('Autor no encontrado');
+        }
+    });
+});
+
+// Insertar un autor
+app.post('/autores', (req, res) => {
+    const autor = req.body;
+    const query = 'INSERT INTO Autores SET ?';
+    db.query(query, autor, (error, result) => {
+        if (error) throw error;
+        res.status(201).send('Autor creado');
+    });
+});
+//EDITAR UN AUTOR
+app.put('/autores/:id', (req, res) => {
+    const idAutor = req.params.id;
+    const nuevoAutor = req.body;
+
+    db.query('UPDATE Autores SET ? WHERE id = ?', [nuevoAutor, idAutor], (error, results) => {
+        if (error) throw error;
+        res.status(200).send('Autor actualizado correctamente');
+    });
+});
+//BORRAR AUTOR
+app.delete('/autores/:id', (req, res) => {
+    db.query('DELETE FROM Autores WHERE id = ?', [req.params.id], (error, results) => {
+        if (error) throw error;
+        res.status(200).send('Autor eliminado correctamente');
+    });
+});
+
+//Mostrar Los libros
 app.get('/libros', (req, res) => {
     db.query('SELECT * FROM libros', (error, results) => {
         if (error) throw error;
@@ -31,15 +77,6 @@ app.get('/libros', (req, res) => {
     db.query('SELECT * FROM libros where id = ?',[req.params.id], (error, results) => {
         if (error) throw error;
         res.status(200).json(results);
-    });
-});
-// Insertar un autor
-app.post('/autores', (req, res) => {
-    const autor = req.body;
-    const query = 'INSERT INTO Autores SET ?';
-    db.query(query, autor, (error, result) => {
-        if (error) throw error;
-        res.status(201).send('Autor creado');
     });
 });
 
