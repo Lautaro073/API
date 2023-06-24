@@ -108,48 +108,40 @@ app.post('/prestamos', (req, res) => {
     const prestamo = req.body;
     db.getConnection((err, connection) => {
         if (err) throw err;
-        // Verificar la disponibilidad del libro
-        connection.query('SELECT stock FROM Libros WHERE id = ?', [prestamo.idLibro], (error, results) => {
+        connection.beginTransaction(error => {
             if (error) {
                 connection.release();
                 throw error;
             }
-            if (results[0].stock <= 0) {
-                // Si no hay stock, enviar un mensaje y finalizar la conexión
-                res.status(200).send('El libro no está en stock');
-                connection.release();
-            } else {
-                // Si hay stock, continuar con la transacción
-                connection.beginTransaction(error => {
-                    if (error) {
+            connection.query('INSERT INTO Prestamos SET ?', prestamo, (error, result) => {
+                if (error) {
+                    if (error.sqlState === '45000') {
+                        // Este es el código de error personalizado que lanzamos en el trigger
+                        // cuando el stock es cero.
+                        res.status(200).send('El libro no está en stock');
+                    }
+                    return connection.rollback(() => {
                         connection.release();
                         throw error;
-                    }
-                    connection.query('INSERT INTO Prestamos SET ?', prestamo, (error, result) => {
+                    });
+                } else {
+                    connection.commit(error => {
                         if (error) {
                             return connection.rollback(() => {
                                 connection.release();
                                 throw error;
                             });
                         } else {
-                            connection.commit(error => {
-                                if (error) {
-                                    return connection.rollback(() => {
-                                        connection.release();
-                                        throw error;
-                                    });
-                                } else {
-                                    connection.release();
-                                    res.status(201).send('Préstamo creado');
-                                }
-                            });
+                            connection.release();
+                            res.status(201).send('Préstamo creado');
                         }
                     });
-                });
-            }
+                }
+            });
         });
     });
 });
+
 
 //LLAMAR A LOS PRESTAMOS
 app.get('/usuario/:id/prestamos', (req, res) => {
@@ -162,6 +154,27 @@ app.get('/usuario/:id/prestamos', (req, res) => {
         }
     });
 });
+
+//ACTUALIZAR AL DEVOLVER LIBRO DEL PRESTAMO
+app.put('/prestamos/:id', (req, res) => {
+    const prestamoId = req.params.id;
+    db.query('SELECT * FROM Prestamos WHERE id = ?', [prestamoId], (error, results) => {
+        if (error) throw error;
+        const prestamo = results[0];
+        if (prestamo.devuelto) {
+            res.status(400).send('El libro ya fue devuelto');
+        } else {
+            db.query('UPDATE Libros SET stock = stock + 1 WHERE id = ?', [prestamo.idLibro], (error, results) => {
+                if (error) throw error;
+                db.query('UPDATE Prestamos SET devuelto = 1 WHERE id = ?', [prestamoId], (error, results) => {
+                    if (error) throw error;
+                    res.status(200).send('Libro devuelto');
+                });
+            });
+        }
+    });
+});
+
 
 
 //CREATE USER

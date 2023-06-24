@@ -44,5 +44,16 @@ Content-Type: application/json
     "nombre":"Rubius"
 }
 
+//HACER UN PRESTAMO
+###
 
+POST http://localhost:3000/prestamos HTTP/1.1
+Content-Type: application/json
+
+{
+    "idUsuario": 1,
+    "idLibro": 1,
+    "fechaPrestamo": "2023-06-19",
+    "fechaDevolucion": "2023-06-26"
+}
 

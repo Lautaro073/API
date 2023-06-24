@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 24-06-2023 a las 23:30:52
+-- Tiempo de generación: 25-06-2023 a las 01:25:59
 -- Versión del servidor: 10.4.24-MariaDB
 -- Versión de PHP: 8.1.6
 
@@ -67,7 +67,7 @@ CREATE TABLE `libros` (
 --
 
 INSERT INTO `libros` (`id`, `nombre`, `idAutor`, `stock`) VALUES
-(1, 'libro troll', 1, 0);
+(1, 'libro troll', 1, 1);
 
 -- --------------------------------------------------------
 
@@ -80,37 +80,9 @@ CREATE TABLE `prestamos` (
   `idUsuario` int(11) DEFAULT NULL,
   `idLibro` int(11) DEFAULT NULL,
   `fechaPrestamo` date DEFAULT NULL,
-  `fechaDevolucion` date DEFAULT NULL
+  `fechaDevolucion` date DEFAULT NULL,
+  `devuelto` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Volcado de datos para la tabla `prestamos`
---
-
-INSERT INTO `prestamos` (`id`, `idUsuario`, `idLibro`, `fechaPrestamo`, `fechaDevolucion`) VALUES
-(1, 1, 1, '2023-06-19', '2023-06-26'),
-(2, 1, 1, '2023-06-19', '2023-06-26');
-
---
--- Disparadores `prestamos`
---
-DELIMITER $$
-CREATE TRIGGER `after_prestamo_insert` AFTER INSERT ON `prestamos` FOR EACH ROW BEGIN
-    DECLARE libro_stock INT;
-
-    SELECT stock INTO libro_stock FROM Libros WHERE id = NEW.idLibro;
-
-    IF libro_stock > 0 THEN
-        UPDATE Libros
-        SET stock = stock - 1
-        WHERE id = NEW.idLibro;
-    ELSE
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'No hay suficientes libros en stock para realizar este préstamo.';
-    END IF;
-END
-$$
-DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -182,7 +154,7 @@ ALTER TABLE `libros`
 -- AUTO_INCREMENT de la tabla `prestamos`
 --
 ALTER TABLE `prestamos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `usuario`
