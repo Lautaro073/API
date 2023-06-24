@@ -33,15 +33,55 @@ app.get('/libros', (req, res) => {
         res.status(200).json(results);
     });
 });
-// Insertar un libro
-app.post('/libros', (req, res) => {
-    const libro = req.body;
-    const query = 'INSERT INTO libros SET ?';
-    db.query(query, libro, (error, result) => {
+// Insertar un autor
+app.post('/autores', (req, res) => {
+    const autor = req.body;
+    const query = 'INSERT INTO Autores SET ?';
+    db.query(query, autor, (error, result) => {
         if (error) throw error;
-        res.status(201).send('Libro creado');
+        res.status(201).send('Autor creado');
     });
 });
+
+// Insertar un libro
+app.post('/libros', (req, res) => {
+    const { nombre, idAutor } = req.body;
+
+    // Primero, verificamos si el idAutor existe
+    const searchAuthorQuery = 'SELECT * FROM Autores WHERE id = ?';
+    db.query(searchAuthorQuery, [idAutor], (searchAuthorErr, searchAuthorResults) => {
+        if (searchAuthorErr) throw searchAuthorErr;
+            
+        if (searchAuthorResults.length == 0) {
+            res.status(400).send('Autor no encontrado.');
+        } else {
+            // Luego, buscamos si ya existe un libro con este nombre
+            const searchBookQuery = 'SELECT * FROM Libros WHERE nombre = ?';
+            db.query(searchBookQuery, [nombre], (searchBookErr, searchBookResults) => {
+                if (searchBookErr) throw searchBookErr;
+
+                if (searchBookResults.length > 0) {
+                    // Si el libro ya existe, incrementamos el stock
+                    const updateStockQuery = 'UPDATE Libros SET stock = stock + 1 WHERE nombre = ?';
+                    db.query(updateStockQuery, [nombre], (updateErr, updateResults) => {
+                        if (updateErr) throw updateErr;
+                        res.status(200).send(`Libro existente, stock incrementado.`);
+                    });
+                } else {
+                    // Si el libro no existe, lo añadimos a la base de datos con un stock de 1
+                    const libro = { nombre, idAutor, stock: 1 };
+                    const insertBookQuery = 'INSERT INTO Libros SET ?';
+                    db.query(insertBookQuery, libro, (insertErr, insertResults) => {
+                        if (insertErr) throw insertErr;
+                        res.status(200).send(`Libro añadido con éxito.`);
+                    });
+                }
+            });
+        }
+    });
+});
+
+
 
 // Actualizar un libro
 app.put('/libros/:id', (req, res) => {
@@ -63,10 +103,38 @@ app.delete('/libros/:id', (req, res) => {
         res.status(200).send('Libro eliminado');
     });
 });
-
-app.listen(3000, () => {
-    console.log('Aplicación escuchando en el puerto 3000');
+//PRESTAMO DE UN LIBRO
+app.post('/prestamos', (req, res) => {
+    const prestamo = req.body;
+    db.beginTransaction(error => {
+        if (error) throw error;
+        db.query('INSERT INTO Prestamos SET ?', prestamo, (error, result) => {
+            if (error) {
+                db.rollback(() => {
+                    throw error;
+                });
+            } else {
+                db.commit(error => {
+                    if (error) {
+                        db.rollback(() => {
+                            throw error;
+                        });
+                    } else {
+                        res.status(201).send('Préstamo creado');
+                    }
+                });
+            }
+        });
+    });
 });
+//LLAMAR A LOS PRESTAMOS
+app.get('/usuario/:id/prestamos', (req, res) => {
+    db.query('CALL GetPrestamosDeUsuario(?)', [req.params.id], (error, results) => {
+        if (error) throw error;
+        res.status(200).json(results[0]);
+    });
+});
+
 //CREATE USER
 app.post("/createUser", async (req, res) => {
     const user = req.body.name;
@@ -77,7 +145,7 @@ app.post("/createUser", async (req, res) => {
         const search_query = mysql.format(sqlSearch, [user])
         const sqlInsert = "INSERT INTO usuario VALUES (0,?,?)"
         const insert_query = mysql.format(sqlInsert, [user, hashedPassword])
-
+        
         await connection.query(search_query, async (err, result) => {
             if (err) throw (err)
             console.log("------> Buscando Resultados")
@@ -113,7 +181,7 @@ app.post("/login", (req, res) => {
         const search_query = mysql.format(sqlSearch, [user])
         await connection.query(search_query, async (err, result) => {
             connection.release()
-
+            
             if (err) throw (err)
             if (result.length == 0) {
                 console.log("--------> User does not exist")
@@ -121,7 +189,7 @@ app.post("/login", (req, res) => {
             }
             else {
                 const hashedPassword = result[0].password
-
+                
                 if (await bcrypt.compare(password, hashedPassword)) {
                     console.log("---------> Login Successful")
                     console.log("---------> Generating accessToken")
@@ -136,3 +204,7 @@ app.post("/login", (req, res) => {
     })
 }) 
 
+
+app.listen(3000, () => {
+    console.log('Aplicación escuchando en el puerto 3000');
+});
