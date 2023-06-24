@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 24-06-2023 a las 23:00:14
+-- Tiempo de generación: 24-06-2023 a las 23:30:52
 -- Versión del servidor: 10.4.24-MariaDB
 -- Versión de PHP: 8.1.6
 
@@ -20,6 +20,16 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `libreria`
 --
+
+DELIMITER $$
+--
+-- Procedimientos
+--
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetPrestamosDeUsuario` (IN `userId` INT)   BEGIN
+    SELECT * FROM Prestamos WHERE idUsuario = userId;
+END$$
+
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -57,7 +67,7 @@ CREATE TABLE `libros` (
 --
 
 INSERT INTO `libros` (`id`, `nombre`, `idAutor`, `stock`) VALUES
-(1, 'libro troll', 1, 1);
+(1, 'libro troll', 1, 0);
 
 -- --------------------------------------------------------
 
@@ -73,17 +83,53 @@ CREATE TABLE `prestamos` (
   `fechaDevolucion` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Volcado de datos para la tabla `prestamos`
+--
+
+INSERT INTO `prestamos` (`id`, `idUsuario`, `idLibro`, `fechaPrestamo`, `fechaDevolucion`) VALUES
+(1, 1, 1, '2023-06-19', '2023-06-26'),
+(2, 1, 1, '2023-06-19', '2023-06-26');
+
+--
+-- Disparadores `prestamos`
+--
+DELIMITER $$
+CREATE TRIGGER `after_prestamo_insert` AFTER INSERT ON `prestamos` FOR EACH ROW BEGIN
+    DECLARE libro_stock INT;
+
+    SELECT stock INTO libro_stock FROM Libros WHERE id = NEW.idLibro;
+
+    IF libro_stock > 0 THEN
+        UPDATE Libros
+        SET stock = stock - 1
+        WHERE id = NEW.idLibro;
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No hay suficientes libros en stock para realizar este préstamo.';
+    END IF;
+END
+$$
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `usuarios`
+-- Estructura de tabla para la tabla `usuario`
 --
 
-CREATE TABLE `usuarios` (
+CREATE TABLE `usuario` (
   `id` int(11) NOT NULL,
   `user` varchar(50) NOT NULL,
   `password` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Volcado de datos para la tabla `usuario`
+--
+
+INSERT INTO `usuario` (`id`, `user`, `password`) VALUES
+(1, 'Yisus', '$2b$10$dfDLY15goE3zcA8w02AR/OKe/XqJwudJ/sv8Pug2DELLCxUw1Xyo6');
 
 --
 -- Índices para tablas volcadas
@@ -111,9 +157,9 @@ ALTER TABLE `prestamos`
   ADD KEY `idLibro` (`idLibro`);
 
 --
--- Indices de la tabla `usuarios`
+-- Indices de la tabla `usuario`
 --
-ALTER TABLE `usuarios`
+ALTER TABLE `usuario`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -136,13 +182,13 @@ ALTER TABLE `libros`
 -- AUTO_INCREMENT de la tabla `prestamos`
 --
 ALTER TABLE `prestamos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT de la tabla `usuarios`
+-- AUTO_INCREMENT de la tabla `usuario`
 --
-ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `usuario`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Restricciones para tablas volcadas
@@ -158,7 +204,7 @@ ALTER TABLE `libros`
 -- Filtros para la tabla `prestamos`
 --
 ALTER TABLE `prestamos`
-  ADD CONSTRAINT `prestamos_ibfk_1` FOREIGN KEY (`idUsuario`) REFERENCES `usuarios` (`id`),
+  ADD CONSTRAINT `prestamos_ibfk_1` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`id`),
   ADD CONSTRAINT `prestamos_ibfk_2` FOREIGN KEY (`idLibro`) REFERENCES `libros` (`id`);
 COMMIT;
 

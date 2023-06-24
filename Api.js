@@ -106,34 +106,63 @@ app.delete('/libros/:id', (req, res) => {
 //PRESTAMO DE UN LIBRO
 app.post('/prestamos', (req, res) => {
     const prestamo = req.body;
-    db.beginTransaction(error => {
-        if (error) throw error;
-        db.query('INSERT INTO Prestamos SET ?', prestamo, (error, result) => {
+    db.getConnection((err, connection) => {
+        if (err) throw err;
+        // Verificar la disponibilidad del libro
+        connection.query('SELECT stock FROM Libros WHERE id = ?', [prestamo.idLibro], (error, results) => {
             if (error) {
-                db.rollback(() => {
-                    throw error;
-                });
+                connection.release();
+                throw error;
+            }
+            if (results[0].stock <= 0) {
+                // Si no hay stock, enviar un mensaje y finalizar la conexión
+                res.status(200).send('El libro no está en stock');
+                connection.release();
             } else {
-                db.commit(error => {
+                // Si hay stock, continuar con la transacción
+                connection.beginTransaction(error => {
                     if (error) {
-                        db.rollback(() => {
-                            throw error;
-                        });
-                    } else {
-                        res.status(201).send('Préstamo creado');
+                        connection.release();
+                        throw error;
                     }
+                    connection.query('INSERT INTO Prestamos SET ?', prestamo, (error, result) => {
+                        if (error) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                throw error;
+                            });
+                        } else {
+                            connection.commit(error => {
+                                if (error) {
+                                    return connection.rollback(() => {
+                                        connection.release();
+                                        throw error;
+                                    });
+                                } else {
+                                    connection.release();
+                                    res.status(201).send('Préstamo creado');
+                                }
+                            });
+                        }
+                    });
                 });
             }
         });
     });
 });
+
 //LLAMAR A LOS PRESTAMOS
 app.get('/usuario/:id/prestamos', (req, res) => {
     db.query('CALL GetPrestamosDeUsuario(?)', [req.params.id], (error, results) => {
         if (error) throw error;
-        res.status(200).json(results[0]);
+        if(results[0].length === 0){
+            res.status(200).send('Este usuario no solicitó préstamo de ningún libro.');
+        } else {
+            res.status(200).json(results[0]);
+        }
     });
 });
+
 
 //CREATE USER
 app.post("/createUser", async (req, res) => {
