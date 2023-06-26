@@ -2,7 +2,6 @@ const express = require('express');
 const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
 const bcrypt= require('bcrypt')
-// Creación de la aplicación Express
 const app = express();
 
 // Parsear JSON
@@ -37,6 +36,21 @@ app.get('/autores/:id', (req, res) => {
         }
     });
 });
+
+//BUSCAR LIBRO POR PALABRA CLAVE
+app.post('/libros/buscar', (req, res) => {
+    const nombre = req.body.nombre;
+    db.query('SELECT * FROM Libros WHERE nombre LIKE ?', [`%${nombre}%`], (error, results) => {
+        if (error) throw error;
+        if (results.length > 0) {
+            res.status(200).json(results);
+        } else {
+            res.status(404).send('No se encontraron libros que coincidan con tu búsqueda');
+        }
+    });
+});
+
+
 
 // Insertar un autor
 app.post('/autores', (req, res) => {
@@ -82,7 +96,7 @@ app.get('/libros', (req, res) => {
 
 // Insertar un libro
 app.post('/libros', (req, res) => {
-    const { nombre, idAutor } = req.body;
+    const { nombre, idAutor,genero } = req.body;
 
     // Primero, verificamos si el idAutor existe
     const searchAuthorQuery = 'SELECT * FROM Autores WHERE id = ?';
@@ -106,7 +120,7 @@ app.post('/libros', (req, res) => {
                     });
                 } else {
                     // Si el libro no existe, lo añadimos a la base de datos con un stock de 1
-                    const libro = { nombre, idAutor, stock: 1 };
+                    const libro = { nombre, idAutor, genero, stock: 1 };
                     const insertBookQuery = 'INSERT INTO Libros SET ?';
                     db.query(insertBookQuery, libro, (insertErr, insertResults) => {
                         if (insertErr) throw insertErr;

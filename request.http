@@ -19,8 +19,9 @@ POST http://localhost:3000/libros HTTP/1.1
 Content-Type: application/json
 
 {
-    "nombre":"libro troll",
-    "idAutor":"1"
+    "nombre":"100 años de perdon",
+    "genero":"fantasia",
+    "idAutor":"2"
 }
 
 
@@ -32,6 +33,7 @@ Content-Type: application/json
 
 {
     "nombre":"Libro Troll",
+    "genero":"Comedia",
     "idAutor":"1"
 }
 
@@ -41,7 +43,7 @@ POST http://localhost:3000/autores HTTP/1.1
 Content-Type: application/json
 
 {
-    "nombre":"Rubius"
+    "nombre":"Garcia"
 }
 
 //HACER UN PRESTAMO
