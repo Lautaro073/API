@@ -1,3 +1,5 @@
+Create SCHEMA `libreria`;
+USE `libreria`;
 CREATE TABLE Usuario (
     id INT AUTO_INCREMENT,
     user VARCHAR(50) NOT NULL,
