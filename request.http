@@ -1,61 +1,135 @@
+### Obtener todos los autores
+GET http://localhost:3000/autores
 ###
 
-//llamar a todos los libros
-GET http://localhost:3000/libros HTTP/1.1
-
-
-
+### Obtener un autor por su ID
+GET http://localhost:3000/autores/1
 ###
 
-//Llamar al libro por su id
-GET http://localhost:3000/libros/1 HTTP/1.1
-
-
-
-###
-
-//Agregar un libro
-POST http://localhost:3000/libros HTTP/1.1
+### Insertar un nuevo autor
+POST http://localhost:3000/autores
 Content-Type: application/json
 
 {
-    "nombre":"100 años de perdon",
-    "genero":"fantasia",
-    "idAutor":"2"
+  "nombre": "Dross"
 }
-
-
 ###
 
-//Editar un libro
-PUT http://localhost:3000/libros/1 HTTP/1.1
+### Editar un autor existente
+PUT http://localhost:3000/autores/1
 Content-Type: application/json
 
 {
-    "nombre":"Libro Troll",
-    "genero":"Comedia",
-    "idAutor":"1"
+  "nombre": "Autor Editado"
 }
-
-//Agregar un autor
 ###
-POST http://localhost:3000/autores HTTP/1.1
+
+### Eliminar un autor
+DELETE http://localhost:3000/autores/3
+###
+
+### Buscar libros por palabra clave
+POST http://localhost:3000/libros/buscar
 Content-Type: application/json
 
 {
-    "nombre":"Garcia"
+  "nombre": "libro"
 }
-
-//HACER UN PRESTAMO
 ###
 
-POST http://localhost:3000/prestamos HTTP/1.1
+### Obtener todos los libros
+GET http://localhost:3000/libros
+###
+
+### Obtener un libro por su ID
+GET http://localhost:3000/libros/1
+###
+
+### Insertar un nuevo libro
+POST http://localhost:3000/libros
 Content-Type: application/json
 
 {
-    "idUsuario": 1,
-    "idLibro": 1,
-    "fechaPrestamo": "2023-06-19",
-    "fechaDevolucion": "2023-06-26"
+  "nombre": "Luna De Pluton",
+  "idAutor": 4,
+  "genero": "Ficcion"
 }
+###
+
+### Actualizar un libro existente
+PUT http://localhost:3000/libros/1
+Content-Type: application/json
+
+{
+  "nombre": "Libro Editado",
+  "idAutor": 1,
+  "genero": "No Ficcion"
+}
+###
+
+### Eliminar un libro
+DELETE http://localhost:3000/libros/1
+###
+
+### Realizar un préstamo de libro
+POST http://localhost:3000/prestamos
+Content-Type: application/json
+
+{
+  "idUsuario": 1,
+  "idLibro": 3
+}
+###
+
+### Obtener los préstamos de un usuario
+GET http://localhost:3000/prestamos/usuario/1
+###
+
+### Actualizar al devolver libro del préstamo
+PUT http://localhost:3000/prestamos/4
+###
+
+### Obtener datos de un usuario existente
+GET http://localhost:3000/usuario
+###
+
+
+### Obtener datos de un usuario existente mediante el id
+GET http://localhost:3000/usuario/1
+###
+
+
+### Crear un nuevo usuario
+POST http://localhost:3000/usuario/createUser
+Content-Type: application/json
+
+{
+  "name": "lej073",
+  "password": "666"
+}
+###
+
+### Autenticar un usuario existente
+POST http://localhost:3000/usuario/login
+Content-Type: application/json
+
+{
+  "name": "lej02",
+  "password": "666"
+}
+###
+### Actualizar datos de un usuario existente
+PUT http://localhost:3000/usuario/2
+Content-Type: application/json
+
+{
+  "user": "cambie el nombre",
+  "password": "testcambio"
+}
+###
+ 
+
+### Borrar un usuario existente
+DELETE http://localhost:3000/usuario/6
+###
 
